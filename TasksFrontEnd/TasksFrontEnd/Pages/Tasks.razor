@@ -1,0 +1,73 @@
+﻿@page "/tasks"
+@using TasksFrontEnd.models;
+@using TasksFrontEnd.HttpRepository;
+@using TasksFrontEnd.Components;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims
+@attribute [Authorize]
+<div class="row">
+    <div class="col-md-10">
+        <Search OnSearchChanged="SearchChanged" />
+    </div>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            @*The user: @context.User.FindFirst(ClaimTypes.Role).Value is authorized*@
+    <div class="col-md-2">
+        <a href="/createTask">Create New Task</a>
+    </div>
+        </Authorized>     
+    </AuthorizeView>
+</div>
+<div class="row">
+    <div class="col">
+        <TasksTable Products="ProductList" OnDeleted="DeleteProduct" OnCheck="CheckTask" />
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+    </div>
+</div>
+
+@code {
+    public List<TaskReq> ProductList { get; set; } = new List<TaskReq>();
+    public string searche="";
+    [Inject]
+    public ITaskHttpRepository ProductRepo { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        ProductList = await ProductRepo.GetTasks(searche);
+        //just for testing
+        foreach (var product in ProductList)
+        {
+            Console.WriteLine(product.Title);
+        }
+    }
+    private async Task DeleteProduct(int id)
+    {
+        await ProductRepo.DeleteProduct(id);
+        await GetTasks();
+        Console.WriteLine("57");
+    }
+    private async Task CheckTask(int id)
+    {
+        await ProductRepo.CheckTask(id);
+        await GetTasks();
+        Console.WriteLine("58");
+    }
+    private async Task GetTasks()
+    {
+        var pagingResponse = await ProductRepo.GetTasks(searche);
+        ProductList = pagingResponse;
+    }
+    private async Task SearchChanged(string searchTerm)
+    {
+        searche = searchTerm;
+        await GetTasks();
+    }
+    }
+<style>
+    body {
+        background-color: gray;
+    }
+</style>

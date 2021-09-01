@@ -1,0 +1,124 @@
+﻿@using TasksFrontEnd.models;
+@using TasksFrontEnd.HttpRepository;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization;
+@if (Products.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col"></th>
+                <th scope="col">TiTle</th>
+                <th scope="col">Text</th>
+                <th scope="col">Comment</th>
+                <th scope="col">Check</th>
+                <th scope="col">AddComment</th>
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        @*The user: @context.User.FindFirst(ClaimTypes.Role).Value is authorized*@                                                
+                <th scope="col">Delete</th>                        
+                    </Authorized>
+                </AuthorizeView>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Products)
+            {
+            <tr>
+                <td>
+                    <img src="@product.FileUrl" alt="product image" style="width:100px;" />
+                </td>
+                <td class="align-middle">
+                    @product.Title
+                </td>
+                <td class="align-middle">
+                    @product.Text
+                </td>
+                <td class="align-middle">
+                    @product.Comment
+                </td>
+                @if (product.Checked == false)
+                {
+                    <td class="align-middle">
+                        <button type="button" class="btn btn-info" @onclick="() => Check(product.Id)"> Check </button>
+                    </td>
+                }
+                else
+                {
+                    <td class="align-middle">
+                        <h3 style="color:green"> Checked! </h3>
+                    </td>
+                }
+            <td class="align-middle">
+                <button type="button" class="btn btn-info" @onclick="() => AddComment(product.Id)">AddComment</button>
+
+            </td>
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        @*The user: @context.User.FindFirst(ClaimTypes.Role).Value is authorized*@
+                <td class="align-middle">
+                    <button type="button" class="btn btn-danger" @onclick="() => Delete(product.Id)">Delete</button>
+                </td>
+                    </Authorized>
+                </AuthorizeView>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <span>
+        Loading products...
+    </span>
+}
+
+@code {
+    [Parameter]
+    public List<TaskReq> Products { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnCheck { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IJSRuntime Js { get; set; }
+    [Inject]
+    ITaskHttpRepository TaskRepo { get; set; }
+
+    private async Task Delete(int id)
+    {
+        var product = Products.FirstOrDefault(p => p.Id.Equals(id));
+
+        var confirmed = await Js.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {product.Title} Task?");
+        if (confirmed)
+        {
+            await OnDeleted.InvokeAsync(id);
+        }
+    }
+    private async Task Check(int id)
+    {
+        var product = Products.FirstOrDefault(p => p.Id.Equals(id));
+
+        var confirmed = await Js.InvokeAsync<bool>("confirm", $"Are you sure you want to Check {product.Title} Task?");
+        if (confirmed)
+        {
+            await OnCheck.InvokeAsync(id);
+
+        }
+    }
+    private async Task AddComment(int id)
+    {
+        NavigationManager.NavigateTo("addcomment/"+ id);
+    }
+    public static Guid ToGuid(int value)
+    {
+        byte[] bytes = new byte[16];
+        BitConverter.GetBytes(value).CopyTo(bytes, 0);
+        return new Guid(bytes);
+    }
+}

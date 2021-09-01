@@ -1,0 +1,74 @@
+﻿@page "/createTask"
+@using TasksFrontEnd.models;
+@using TasksFrontEnd.HttpRepository;
+<h2>Create Task Form</h2>
+
+<EditForm Model="_product" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+    <DataAnnotationsValidator />
+    <div class="form-group row">
+        <label for="name" class="col-md-2 col-form-label">Title:</label>
+        <div class="col-md-10">
+            <InputText id="name" class="form-control" @bind-Value="_product.Title" />
+            <ValidationMessage For="@(() => _product.Title)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="Text" class="col-md-2 col-form-label">Text:</label>
+        <div class="col-md-10">
+            <InputText id="Text" class="form-control" @bind-Value="_product.Text" />
+            <ValidationMessage For="@(() => _product.Text)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="Comment" class="col-md-2 col-form-label">Comment:</label>
+        <div class="col-md-10">
+            <InputText id="comment" class="form-control" @bind-Value="_product.Comment" />
+            <ValidationMessage For="@(() => _product.Comment)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="image" class="col-md-2 col-form-label">Image:</label>
+        <div class="col-md-10">
+            <ImageUpload OnChange="AssignImageUrl" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="type" class="col-md-2 col-form-label">Task Type:</label>
+        <div class="col-md-10">
+            <InputRadioGroup id="type" @bind-Value="_product.Type" class="form-control">
+                <InputRadio Value="0" /><span style="padding-left: 5px"></span>Technical <br />
+                <InputRadio Value="1" /><span style="padding-left: 5px"></span>Business <br />
+
+            </InputRadioGroup>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 text-right">
+            <button type="submit" class="btn btn-success">Create</button>
+        </div>
+    </div>
+</EditForm>
+<SuccessNotification @ref="_notification" />
+@code {
+    private TaskReq _product = new TaskReq();
+    private SuccessNotification _notification;
+    [Inject]
+    public ITaskHttpRepository TaskRepo { get; set; }
+    List<TypeMode> mylist = new List<TypeMode> {
+        new TypeMode { type = false, label = "Technicalll" },
+        new TypeMode { type = true, label = "Business" },
+    };
+
+    private async Task Create()
+    {
+        _product.Checked = false;
+        await TaskRepo.CreateTask(_product);
+        _notification.Show("Your Task Created Successfully");
+    }
+    private void AssignImageUrl(string imgUrl) => _product.FileUrl = imgUrl;
+}
+<style>
+    body {
+        background-color: gray;
+    }
+</style>
